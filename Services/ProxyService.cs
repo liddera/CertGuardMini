@@ -41,19 +41,14 @@ public class ProxyService : IDisposable
             _proxyServer.AddEndPoint(_endpoint);
 
             _proxyServer.CertificateManager.EnsureRootCertificate();
-
-            if (_broker.Certificate is not null)
-            {
-                var cert = _broker.Certificate;
-                _proxyServer.CertificateManager.CertificateStorage.AddCertificate(cert);
-                Log?.Invoke(this, $"Certificado real instalado no proxy: {cert.SubjectName.Name}");
-            }
-
             _proxyServer.Start();
             _proxyServer.SetAsSystemProxy(_endpoint, ProxyProtocolType.AllHttp);
 
             _isRunning = true;
             Log?.Invoke(this, $"Proxy iniciado na porta {Port}");
+            if (_broker.Certificate is not null)
+                Log?.Invoke(this, $"Certificado real disponivel: {_broker.Certificate.SubjectName.Name}");
+
             await Task.CompletedTask;
         }
         catch (Exception ex)
@@ -88,10 +83,9 @@ public class ProxyService : IDisposable
         {
             try
             {
-                var cert = _broker.Certificate;
-                e.HttpClient.ClientCertificate = cert;
+                e.HttpClient.ClientCertificate = _broker.Certificate;
                 CertificateUsed?.Invoke(this,
-                    $"Certificado aplicado: {cert.SubjectName.Name} [{cert.Thumbprint[..8]}...]");
+                    $"Certificado aplicado: {_broker.Certificate.SubjectName.Name} [{_broker.Certificate.Thumbprint[..8]}...]");
             }
             catch (Exception ex)
             {
