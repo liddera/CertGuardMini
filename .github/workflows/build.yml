@@ -1,0 +1,47 @@
+name: CertGuard Mini Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:  # Permite rodar manualmente
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET 8.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: .
+
+    - name: Build
+      run: dotnet build -c ${{ matrix.configuration }} --no-restore
+      working-directory: .
+
+    - name: Publish self-contained
+      run: |
+        dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
+      working-directory: .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CertGuardMini-win-x64
+        path: ./publish/CertGuardMini.exe
+        retention-days: 30
