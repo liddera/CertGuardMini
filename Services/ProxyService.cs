@@ -81,16 +81,8 @@ public class ProxyService : IDisposable
 
         if (_broker.Certificate is not null)
         {
-            try
-            {
-                e.HttpClient.ClientCertificate = _broker.Certificate;
-                CertificateUsed?.Invoke(this,
-                    $"Certificado aplicado: {_broker.Certificate.SubjectName.Name} [{_broker.Certificate.Thumbprint[..8]}...]");
-            }
-            catch (Exception ex)
-            {
-                Log?.Invoke(this, $"Erro ao injetar certificado: {ex.Message}");
-            }
+            CertificateUsed?.Invoke(this,
+                $"Certificado disponivel: {_broker.Certificate.SubjectName.Name} [{_broker.Certificate.Thumbprint[..8]}...]");
         }
 
         RequestAllowed?.Invoke(this, host);
