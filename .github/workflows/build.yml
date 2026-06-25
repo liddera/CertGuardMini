@@ -1,11 +1,7 @@
 name: CertGuard Mini Build
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:  # Permite rodar manualmente
+  workflow_dispatch:  # Só roda quando VOCÊ clica "Run workflow"
 
 jobs:
   build:

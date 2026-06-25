@@ -78,8 +78,7 @@ public class CertBrokerService : IDisposable
 
         if (blocked)
         {
-            var rule = _domainRules.First(r => r.IsBlocked && normalizedDomain.Contains(r.Domain.ToLower()));
-            DomainBlocked?.Invoke(this, rule);
+            DomainBlocked?.Invoke(this, _domainRules.First(r => r.IsBlocked && normalizedDomain.Contains(r.Domain.ToLower())));
             return false;
         }
 
@@ -93,66 +92,34 @@ public class CertBrokerService : IDisposable
 
     public void AddDomainRule(string domain, string label, bool isBlocked)
     {
-        _domainRules.RemoveAll(r =>
-            r.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
-
-        _domainRules.Add(new DomainRule
-        {
-            Domain = domain,
-            Label = label,
-            IsBlocked = isBlocked
-        });
+        _domainRules.RemoveAll(r => r.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
+        _domainRules.Add(new DomainRule { Domain = domain, Label = label, IsBlocked = isBlocked });
     }
 
     public void RemoveDomainRule(string domain)
     {
-        _domainRules.RemoveAll(r =>
-            r.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
+        _domainRules.RemoveAll(r => r.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
     }
 
     public void RebuildDomainRules()
     {
         _domainRules.Clear();
-
         if (_currentCert is null) return;
 
         foreach (var domain in _currentCert.AllowedDomains)
-        {
-            _domainRules.Add(new DomainRule
-            {
-                Domain = domain,
-                Label = domain,
-                IsBlocked = false
-            });
-        }
+            _domainRules.Add(new DomainRule { Domain = domain, Label = domain, IsBlocked = false });
 
         foreach (var domain in _currentCert.BlockedDomains)
-        {
-            _domainRules.Add(new DomainRule
-            {
-                Domain = domain,
-                Label = domain,
-                IsBlocked = true
-            });
-        }
+            _domainRules.Add(new DomainRule { Domain = domain, Label = domain, IsBlocked = true });
     }
 
-    public X509Certificate2? GetCertificate()
-    {
-        return _certificate;
-    }
+    public X509Certificate2? GetCertificate() => _certificate;
 
     public void Unload()
     {
         _certificate?.Dispose();
         _certificate = null;
-
-        if (_currentCert is not null)
-        {
-            _currentCert.IsActive = false;
-            _currentCert = null;
-        }
-
+        if (_currentCert is not null) { _currentCert.IsActive = false; _currentCert = null; }
         _domainRules.Clear();
         StatusChanged?.Invoke(this, "Certificado descarregado da memória");
     }

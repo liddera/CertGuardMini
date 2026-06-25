@@ -1,7 +1,7 @@
 using System.Net;
-using Unobtanium.Web.Proxy;
-using Unobtanium.Web.Proxy.EventArguments;
-using Unobtanium.Web.Proxy.Models;
+using Titanium.Web.Proxy;
+using Titanium.Web.Proxy.EventArguments;
+using Titanium.Web.Proxy.Models;
 
 namespace CertGuardMini.Services;
 
@@ -45,6 +45,7 @@ public class ProxyService : IDisposable
 
             _isRunning = true;
             Log?.Invoke(this, $"Proxy iniciado na porta {Port}");
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -56,24 +57,19 @@ public class ProxyService : IDisposable
     private async Task OnBeforeRequest(object sender, SessionEventArgs e)
     {
         var host = e.HttpClient.Request.Host?.ToLower() ?? "";
-        var url = e.HttpClient.Request.Url?.ToLower() ?? "";
 
-        Log?.Invoke(this, $">>> Requisição: {host}{e.HttpClient.Request.RequestUri?.PathAndQuery}");
+        Log?.Invoke(this, $">>> Requisição: {host}");
 
         if (!_broker.IsDomainAllowed(host))
         {
-            e.HttpClient.Response.StatusCode = HttpStatusCode.Forbidden;
-            e.HttpClient.Response.BodyString = GenerateBlockedPage(host);
-
+            e.Ok(Encoding.UTF8.GetBytes(GenerateBlockedPage(host)));
             RequestBlocked?.Invoke(this, host);
-            Log?.Invoke(this, $"❌ BLOQUEADO: {host}");
+            Log?.Invoke(this, $"BLOQUEADO: {host}");
             return;
         }
 
         RequestAllowed?.Invoke(this, host);
-        Log?.Invoke(this, $"✅ PERMITIDO: {host}");
-
-        await Task.CompletedTask;
+        Log?.Invoke(this, $"PERMITIDO: {host}");
     }
 
     private Task OnAfterResponse(object sender, SessionEventArgs e)
@@ -83,49 +79,35 @@ public class ProxyService : IDisposable
 
     private string GenerateBlockedPage(string domain)
     {
-        return $@"
-<!DOCTYPE html>
+        return $@"<!DOCTYPE html>
 <html>
-<head>
-    <title>CertGuard Mini - Acesso Bloqueado</title>
-    <style>
-        body {{ font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0;
-               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-        .card {{ background: #16213e; border: 2px solid #e94560; border-radius: 12px;
-                padding: 40px; text-align: center; max-width: 500px; }}
-        .icon {{ font-size: 64px; margin-bottom: 20px; }}
-        h1 {{ color: #e94560; margin: 0 0 10px 0; font-size: 24px; }}
-        .domain {{ background: #0f3460; padding: 10px; border-radius: 6px;
-                   font-family: monospace; color: #e94560; margin: 15px 0; }}
-        p {{ color: #a0a0a0; line-height: 1.6; }}
-        .footer {{ margin-top: 20px; font-size: 12px; color: #555; }}
-    </style>
-</head>
+<head><title>CertGuard Mini - Bloqueado</title>
+<style>
+body {{ font-family:'Segoe UI',sans-serif; background:#1a1a2e; color:#e0e0e0;
+       display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }}
+.card {{ background:#16213e; border:2px solid #e94560; border-radius:12px;
+        padding:40px; text-align:center; max-width:500px; }}
+h1 {{ color:#e94560; }}
+.domain {{ background:#0f3460; padding:10px; border-radius:6px;
+           font-family:monospace; color:#e94560; margin:15px 0; }}
+</style></head>
 <body>
-    <div class='card'>
-        <div class='icon'>🛡️</div>
-        <h1>Acesso Bloqueado</h1>
-        <p>O domínio abaixo não está na lista de permitidos:</p>
-        <div class='domain'>{domain}</div>
-        <p>CertGuard Mini está protegendo seu tráfego.<br/>
-           Entre em contato com o administrador para solicitar acesso.</p>
-        <div class='footer'>CertGuard Mini v1.0.0 - Protótipo</div>
-    </div>
-</body>
-</html>";
+<div class='card'>
+<h1>Acesso Bloqueado</h1>
+<p>O domínio nao esta na lista de permitidos:</p>
+<div class='domain'>{domain}</div>
+<p>CertGuard Mini esta protegendo seu trafego.</p>
+</div></body></html>";
     }
 
     public void Stop()
     {
         if (!_isRunning) return;
-
         try
         {
             _proxyServer.Stop();
-
             _proxyServer.BeforeRequest -= OnBeforeRequest;
             _proxyServer.AfterResponse -= OnAfterResponse;
-
             _isRunning = false;
             Log?.Invoke(this, "Proxy parado");
         }
