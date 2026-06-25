@@ -1,0 +1,145 @@
+<Window x:Class="CertGuardMini.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CertGuard Mini - Protótipo" Height="650" Width="800"
+        Background="#1a1a2e" Foreground="#e0e0e0"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="180"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="CertGuard Mini" FontSize="28" FontWeight="Bold"
+                       Foreground="#e94560"/>
+            <TextBlock Text="Protótipo - Controle de Certificado Digital + Proxy de Bloqueio"
+                       FontSize="13" Foreground="#888"/>
+        </StackPanel>
+
+        <!-- Certificate Info -->
+        <Border Grid.Row="1" Background="#16213e" BorderBrush="#0f3460"
+                BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="CERTIFICADO CARREGADO" FontSize="11"
+                               Foreground="#e94560" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock x:Name="txtCertInfo" Text="Nenhum certificado carregado"
+                               FontSize="12" Foreground="#ccc" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="STATUS" FontSize="11" Foreground="#e94560"
+                               FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <TextBlock x:Name="txtStatus" Text="INATIVO" FontSize="16"
+                               FontWeight="Bold" Foreground="Gray"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="250"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Controls + Log -->
+            <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                <!-- Buttons -->
+                <WrapPanel Margin="0,0,0,15">
+                    <Button x:Name="btnStartProxy" Content="▶ ATIVAR PROXY"
+                            Click="btnStartProxy_Click"
+                            Background="#27ae60" Foreground="White"
+                            FontWeight="Bold" Padding="20,12" Margin="0,0,10,0"
+                            BorderThickness="0" FontSize="14"/>
+                    <Button x:Name="btnStopProxy" Content="⏹ PARAR PROXY"
+                            Click="btnStopProxy_Click"
+                            Background="#e94560" Foreground="White"
+                            FontWeight="Bold" Padding="20,12" IsEnabled="False"
+                            BorderThickness="0" FontSize="14"/>
+                </WrapPanel>
+
+                <!-- Log -->
+                <TextBlock Text="LOG DE ATIVIDADE" FontSize="11" Foreground="#e94560"
+                           FontWeight="Bold" Margin="0,0,0,5"/>
+                <Border Background="#0d1117" BorderBrush="#333" BorderThickness="1"
+                        CornerRadius="6" Padding="5">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="250">
+                        <TextBox x:Name="txtLog" IsReadOnly="True"
+                                 Background="Transparent" Foreground="#00ff41"
+                                 FontFamily="Consolas" FontSize="12"
+                                 BorderThickness="0" TextWrapping="Wrap"
+                                 Text="[Sistema] CertGuard Mini iniciado&#x0a;"/>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+
+            <!-- Domain Rules -->
+            <Border Grid.Column="1" Background="#16213e" BorderBrush="#0f3460"
+                    BorderThickness="1" CornerRadius="8" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="REGRAS DE DOMÍNIO" FontSize="13" FontWeight="Bold"
+                               Foreground="#e94560" Margin="0,0,0,10"/>
+
+                    <ListBox x:Name="lstDomains" Background="#0d1117"
+                             Foreground="#ccc" BorderBrush="#333"
+                             BorderThickness="1" Height="200" FontSize="12"/>
+
+                    <TextBox x:Name="txtNewDomain" Background="#0f3460"
+                             Foreground="White" BorderBrush="#333"
+                             BorderThickness="1" Padding="8"
+                             Margin="0,10,0,5" FontSize="12"
+                             Tag="Novo domínio..."/>
+
+                    <WrapPanel Margin="0,0,0,5">
+                        <Button Content="❌ Bloquear" Click="btnAddBlocked_Click"
+                                Background="#e94560" Foreground="White"
+                                Padding="12,6" Margin="0,0,5,0" BorderThickness="0"/>
+                        <Button Content="✅ Permitir" Click="btnAddAllowed_Click"
+                                Background="#27ae60" Foreground="White"
+                                Padding="12,6" Margin="0,0,5,0" BorderThickness="0"/>
+                        <Button Content="🗑 Remover" Click="btnRemoveDomain_Click"
+                                Background="#555" Foreground="White"
+                                Padding="12,6" BorderThickness="0"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="#0f3460" CornerRadius="6" Padding="10,8"
+                Margin="0,10,0,10">
+            <TextBlock Text="CertGuard Mini v1.0.0 | Protótipo para validação | Alvras © 2026"
+                       FontSize="11" Foreground="#666" HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Instructions -->
+        <Border Grid.Row="4" Background="#16213e" BorderBrush="#0f3460"
+                BorderThickness="1" CornerRadius="8" Padding="15">
+            <StackPanel>
+                <TextBlock Text="COMO TESTAR" FontSize="13" FontWeight="Bold"
+                           Foreground="#e94560" Margin="0,0,0,8"/>
+                <TextBlock Foreground="#aaa" FontSize="12" TextWrapping="Wrap" LineHeight="22">
+                    <Run FontWeight="Bold" Foreground="#fff">1.</Run> Clique em "ATIVAR PROXY"<LineBreak/>
+                    <Run FontWeight="Bold" Foreground="#fff">2.</Run> Abra o navegador (Chrome/Edge)<LineBreak/>
+                    <Run FontWeight="Bold" Foreground="#fff">3.</Run> Acesse <Run Foreground="#e94560">https://download.dfe.sefin.ro.gov.br</Run> → Deve ser <Run Foreground="#e94560">BLOQUEADO</Run><LineBreak/>
+                    <Run FontWeight="Bold" Foreground="#fff">4.</Run> Acesse <Run Foreground="#27ae60">https://google.com</Run> → Deve ser <Run Foreground="#27ae60">PERMITIDO</Run><LineBreak/>
+                    <Run FontWeight="Bold" Foreground="#fff">5.</Run> Adicione/remova domínios na coluna da direita para testar<LineBreak/>
+                    <Run FontWeight="Bold" Foreground="#fff">6.</Run> Clique em "PARAR PROXY" para desativar
+                </TextBlock>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

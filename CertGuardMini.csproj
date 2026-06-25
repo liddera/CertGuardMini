@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+    <AssemblyName>CertGuardMini</AssemblyName>
+    <RootNamespace>CertGuardMini</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>Alvras</Authors>
+    <Description>CertGuard Mini - Protótipo de Controle de Certificados Digitais</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Unobtanium.Web.Proxy" Version="0.9.1-beta.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+  </ItemGroup>
+
+</Project>
