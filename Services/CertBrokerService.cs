@@ -12,38 +12,67 @@ public class CertBrokerService : IDisposable
     public bool IsLoaded => _certificate is not null;
     public CertificateInfo? CurrentCertificate => _currentCert;
     public IReadOnlyList<DomainRule> DomainRules => _domainRules.AsReadOnly();
+    public X509Certificate2? Certificate => _certificate;
 
     public event EventHandler<string>? StatusChanged;
     public event EventHandler<DomainRule>? DomainBlocked;
 
-    public void LoadCertificate(CertificateInfo cert)
+    public void LoadFromPfxFile(string filePath, string password)
     {
         try
         {
-            if (!string.IsNullOrEmpty(cert.PfxBase64) && !string.IsNullOrEmpty(cert.Password))
-            {
-                var pfxBytes = Convert.FromBase64String(cert.PfxBase64);
-                _certificate = new X509Certificate2(
-                    pfxBytes,
-                    cert.Password,
-                    X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
-
-                cert.Thumbprint = _certificate.Thumbprint;
-            }
-            else
-            {
-                _certificate = null;
-            }
-
-            _currentCert = cert;
-            cert.IsActive = true;
-            cert.ActivatedAt = DateTime.Now;
-
-            StatusChanged?.Invoke(this, $"Certificado '{cert.DisplayName}' carregado na memória");
+            var pfxBytes = File.ReadAllBytes(filePath);
+            LoadFromPfxBytes(pfxBytes, password, Path.GetFileName(filePath));
         }
         catch (Exception ex)
         {
-            StatusChanged?.Invoke(this, $"Erro ao carregar certificado: {ex.Message}");
+            StatusChanged?.Invoke(this, $"Erro ao ler arquivo: {ex.Message}");
+            throw;
+        }
+    }
+
+    public void LoadFromPfxBytes(byte[] pfxBytes, string password, string displayName = "Certificado")
+    {
+        try
+        {
+            _certificate?.Dispose();
+
+            _certificate = new X509Certificate2(
+                pfxBytes,
+                password,
+                X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
+
+            _currentCert = new CertificateInfo
+            {
+                DisplayName = displayName,
+                Thumbprint = _certificate.Thumbprint,
+                IsActive = true,
+                ActivatedAt = DateTime.Now,
+                AllowedDomains =
+                [
+                    "download.dfe.sefin.ro.gov.br",
+                    "sistemas.receita.fazenda.gov.br",
+                    "portal.esocial.gov.br",
+                    "sped.fazenda.gov.br"
+                ],
+                BlockedDomains = ["google.com", "facebook.com"]
+            };
+
+            RebuildDomainRules();
+
+            var subject = _certificate.SubjectName.Name ?? "Desconhecido";
+            var validUntil = _certificate.NotAfter.ToString("dd/MM/yyyy");
+
+            StatusChanged?.Invoke(this,
+                $"Certificado REAL carregado!\n" +
+                $"  Titular: {subject}\n" +
+                $"  Thumbprint: {_certificate.Thumbprint[..16]}...\n" +
+                $"  Validade: {validUntil}\n" +
+                $"  Tamanho: {pfxBytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            StatusChanged?.Invoke(this, $"Erro ao carregar PFX: {ex.Message}");
             throw;
         }
     }
@@ -64,8 +93,14 @@ public class CertBrokerService : IDisposable
             BlockedDomains = ["google.com", "facebook.com"]
         };
 
-        LoadCertificate(cert);
+        _certificate?.Dispose();
+        _certificate = null;
+        _currentCert = cert;
+        cert.IsActive = true;
+        cert.ActivatedAt = DateTime.Now;
+
         RebuildDomainRules();
+        StatusChanged?.Invoke(this, $"Certificado SIMULADO carregado (sem PFX real)");
     }
 
     public bool IsDomainAllowed(string domain)

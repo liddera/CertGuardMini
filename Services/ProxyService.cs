@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Models;
@@ -18,6 +19,7 @@ public class ProxyService : IDisposable
     public event EventHandler<string>? Log;
     public event EventHandler<string>? RequestBlocked;
     public event EventHandler<string>? RequestAllowed;
+    public event EventHandler<string>? CertificateUsed;
 
     public ProxyService(CertBrokerService broker, int port = 8888)
     {
@@ -33,14 +35,21 @@ public class ProxyService : IDisposable
         try
         {
             _proxyServer.BeforeRequest += OnBeforeRequest;
-            _proxyServer.AfterResponse += OnAfterResponse;
+            _proxyServer.ServerCertificateValidationCallback += OnCertificateValidation;
 
             _endpoint = new ExplicitProxyEndPoint(IPAddress.Any, Port, true);
             _proxyServer.AddEndPoint(_endpoint);
 
             _proxyServer.CertificateManager.EnsureRootCertificate();
-            _proxyServer.Start();
 
+            if (_broker.Certificate is not null)
+            {
+                var cert = _broker.Certificate;
+                _proxyServer.CertificateManager.CertificateStorage.AddCertificate(cert);
+                Log?.Invoke(this, $"Certificado real instalado no proxy: {cert.SubjectName.Name}");
+            }
+
+            _proxyServer.Start();
             _proxyServer.SetAsSystemProxy(_endpoint, ProxyProtocolType.AllHttp);
 
             _isRunning = true;
@@ -54,27 +63,44 @@ public class ProxyService : IDisposable
         }
     }
 
+    private Task OnCertificateValidation(object sender, CertificateValidationEventArgs e)
+    {
+        e.IsValid = true;
+        return Task.CompletedTask;
+    }
+
     private async Task OnBeforeRequest(object sender, SessionEventArgs e)
     {
         var host = e.HttpClient.Request.Host?.ToLower() ?? "";
+        var url = e.HttpClient.Request.Url ?? "";
 
-        Log?.Invoke(this, $">>> Requisição: {host}");
+        Log?.Invoke(this, $">>> {e.HttpClient.Request.Method} {url}");
 
         if (!_broker.IsDomainAllowed(host))
         {
-            e.Ok(Encoding.UTF8.GetBytes(GenerateBlockedPage(host)));
+            e.Ok(System.Text.Encoding.UTF8.GetBytes(GenerateBlockedPage(host)));
             RequestBlocked?.Invoke(this, host);
             Log?.Invoke(this, $"BLOQUEADO: {host}");
             return;
         }
 
+        if (_broker.Certificate is not null)
+        {
+            try
+            {
+                var cert = _broker.Certificate;
+                e.HttpClient.ClientCertificate = cert;
+                CertificateUsed?.Invoke(this,
+                    $"Certificado aplicado: {cert.SubjectName.Name} [{cert.Thumbprint[..8]}...]");
+            }
+            catch (Exception ex)
+            {
+                Log?.Invoke(this, $"Erro ao injetar certificado: {ex.Message}");
+            }
+        }
+
         RequestAllowed?.Invoke(this, host);
         Log?.Invoke(this, $"PERMITIDO: {host}");
-    }
-
-    private Task OnAfterResponse(object sender, SessionEventArgs e)
-    {
-        return Task.CompletedTask;
     }
 
     private string GenerateBlockedPage(string domain)
@@ -94,7 +120,7 @@ h1 {{ color:#e94560; }}
 <body>
 <div class='card'>
 <h1>Acesso Bloqueado</h1>
-<p>O domínio nao esta na lista de permitidos:</p>
+<p>O dominio nao esta na lista de permitidos:</p>
 <div class='domain'>{domain}</div>
 <p>CertGuard Mini esta protegendo seu trafego.</p>
 </div></body></html>";
@@ -107,7 +133,7 @@ h1 {{ color:#e94560; }}
         {
             _proxyServer.Stop();
             _proxyServer.BeforeRequest -= OnBeforeRequest;
-            _proxyServer.AfterResponse -= OnAfterResponse;
+            _proxyServer.ServerCertificateValidationCallback -= OnCertificateValidation;
             _isRunning = false;
             Log?.Invoke(this, "Proxy parado");
         }

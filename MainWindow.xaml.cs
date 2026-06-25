@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using Microsoft.Win32;
 using CertGuardMini.Models;
 using CertGuardMini.Services;
 
@@ -18,12 +19,6 @@ public partial class MainWindow : Window
 
     private void LoadDefaultRules()
     {
-        _broker.LoadSimulatedCertificate("Certificado Teste - Empresa ABC");
-        txtCertInfo.Text = $"Certificado: {_broker.CurrentCertificate?.DisplayName}\n" +
-                           $"Thumbprint: {_broker.CurrentCertificate?.Thumbprint}\n" +
-                           $"Domínios permitidos: {_broker.CurrentCertificate?.AllowedDomains.Count}\n" +
-                           $"Domínios bloqueados: {_broker.CurrentCertificate?.BlockedDomains.Count}";
-
         LoadDomainRules();
     }
 
@@ -37,6 +32,72 @@ public partial class MainWindow : Window
         }
     }
 
+    private void btnLoadPfx_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = "Certificados PFX|*.pfx;*.p12|Todos os arquivos|*.*",
+            Title = "Selecionar certificado digital"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            var password = txtPassword.Password;
+            if (string.IsNullOrEmpty(password))
+            {
+                MessageBox.Show("Digite a senha do certificado.", "Senha necessária",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                _broker.LoadFromPfxFile(dialog.FileName, password);
+                UpdateCertInfo();
+                LoadDomainRules();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar PFX:\n{ex.Message}", "Erro",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void btnLoadSimulated_Click(object sender, RoutedEventArgs e)
+    {
+        _broker.LoadSimulatedCertificate("Certificado Teste - Empresa ABC");
+        UpdateCertInfo();
+        LoadDomainRules();
+    }
+
+    private void UpdateCertInfo()
+    {
+        var cert = _broker.Certificate;
+        if (cert is not null)
+        {
+            txtCertInfo.Text = $"Tipo: REAL (PFX)\n" +
+                               $"Titular: {cert.SubjectName.Name}\n" +
+                               $"Thumbprint: {cert.Thumbprint[..16]}...\n" +
+                               $"Validade: {cert.NotAfter:dd/MM/yyyy}\n" +
+                               $"Domínios: {_broker.DomainRules.Count}";
+            txtCertInfo.Foreground = new SolidColorBrush(Color.FromRgb(0x27, 0xAE, 0x60));
+        }
+        else if (_broker.CurrentCertificate is not null)
+        {
+            txtCertInfo.Text = $"Tipo: SIMULADO\n" +
+                               $"Nome: {_broker.CurrentCertificate.DisplayName}\n" +
+                               $"Thumbprint: {_broker.CurrentCertificate.Thumbprint}\n" +
+                               $"Domínios: {_broker.DomainRules.Count}";
+            txtCertInfo.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xA5, 0x00));
+        }
+        else
+        {
+            txtCertInfo.Text = "Nenhum certificado carregado";
+            txtCertInfo.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+        }
+    }
+
     private async void btnStartProxy_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -47,22 +108,28 @@ public partial class MainWindow : Window
             _proxy.Log += (s, msg) => Dispatcher.Invoke(() => AddLog(msg));
             _proxy.RequestBlocked += (s, domain) => Dispatcher.Invoke(() =>
             {
-                AddLog($"🛡️ BLOQUEIO: {domain}");
+                AddLog($"BLOQUEIO: {domain}");
                 UpdateStatus("BLOQUEIO DETECTADO", Brushes.Red);
             });
             _proxy.RequestAllowed += (s, domain) => Dispatcher.Invoke(() =>
             {
-                AddLog($"✅ LIBERADO: {domain}");
+                AddLog($"LIBERADO: {domain}");
+            });
+            _proxy.CertificateUsed += (s, info) => Dispatcher.Invoke(() =>
+            {
+                AddLog($"CERTIFICADO APLICADO: {info}");
             });
 
             await _proxy.StartAsync();
 
-            UpdateStatus("PROXY ATIVO - Porta " + _proxy.Port, Brushes.LimeGreen);
+            var certType = _broker.Certificate is not null ? "REAL" : "SIMULADO";
+            UpdateStatus($"PROXY ATIVO ({certType}) - Porta {_proxy.Port}", Brushes.LimeGreen);
             btnStartProxy.IsEnabled = false;
             btnStopProxy.IsEnabled = true;
 
             MessageBox.Show(
-                $"Proxy ativo na porta {_proxy.Port}!\n\n" +
+                $"Proxy ativo na porta {_proxy.Port}!\n" +
+                $"Certificado: {certType}\n\n" +
                 "Teste agora:\n" +
                 "1. Abra o navegador\n" +
                 "2. Acesse https://download.dfe.sefin.ro.gov.br\n" +
@@ -75,7 +142,8 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erro ao iniciar proxy:\n{ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Erro ao iniciar proxy:\n{ex.Message}", "Erro",
+                MessageBoxButton.OK, MessageBoxImage.Error);
             btnStartProxy.IsEnabled = true;
         }
     }
@@ -86,13 +154,11 @@ public partial class MainWindow : Window
         _proxy?.Dispose();
         _proxy = null;
 
-        _broker.Unload();
-
         UpdateStatus("PROXY INATIVO", Brushes.Gray);
         btnStartProxy.IsEnabled = true;
         btnStopProxy.IsEnabled = false;
 
-        AddLog("Proxy parado e certificado descarregado");
+        AddLog("Proxy parado");
     }
 
     private void btnAddBlocked_Click(object sender, RoutedEventArgs e)
@@ -103,8 +169,7 @@ public partial class MainWindow : Window
         _broker.AddDomainRule(domain, domain, isBlocked: true);
         LoadDomainRules();
         txtNewDomain.Text = "";
-
-        AddLog($"Domínio BLOQUEADO adicionado: {domain}");
+        AddLog($"Domínio BLOQUEADO: {domain}");
     }
 
     private void btnAddAllowed_Click(object sender, RoutedEventArgs e)
@@ -115,8 +180,7 @@ public partial class MainWindow : Window
         _broker.AddDomainRule(domain, domain, isBlocked: false);
         LoadDomainRules();
         txtNewDomain.Text = "";
-
-        AddLog($"Domínio PERMITIDO adicionado: {domain}");
+        AddLog($"Domínio PERMITIDO: {domain}");
     }
 
     private void btnRemoveDomain_Click(object sender, RoutedEventArgs e)
@@ -128,7 +192,6 @@ public partial class MainWindow : Window
 
         _broker.RemoveDomainRule(domain);
         LoadDomainRules();
-
         AddLog($"Domínio removido: {domain}");
     }
 
