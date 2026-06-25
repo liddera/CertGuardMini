@@ -36,6 +36,7 @@ public class ProxyService : IDisposable
         {
             _proxyServer.BeforeRequest += OnBeforeRequest;
             _proxyServer.ServerCertificateValidationCallback += OnCertificateValidation;
+            _proxyServer.ClientCertificateSelectionCallback += OnCertificateSelection;
 
             _endpoint = new ExplicitProxyEndPoint(IPAddress.Any, Port, true);
             _proxyServer.AddEndPoint(_endpoint);
@@ -64,6 +65,17 @@ public class ProxyService : IDisposable
         return Task.CompletedTask;
     }
 
+    private Task OnCertificateSelection(object sender, CertificateSelectionEventArgs e)
+    {
+        if (_broker.Certificate is not null)
+        {
+            e.ClientCertificate = _broker.Certificate;
+            CertificateUsed?.Invoke(this,
+                $"Certificado selecionado: {_broker.Certificate.SubjectName.Name} [{_broker.Certificate.Thumbprint[..8]}...]");
+        }
+        return Task.CompletedTask;
+    }
+
     private async Task OnBeforeRequest(object sender, SessionEventArgs e)
     {
         var host = e.HttpClient.Request.Host?.ToLower() ?? "";
@@ -77,20 +89,6 @@ public class ProxyService : IDisposable
             RequestBlocked?.Invoke(this, host);
             Log?.Invoke(this, $"BLOQUEADO: {host}");
             return;
-        }
-
-        if (_broker.Certificate is not null)
-        {
-            try
-            {
-                e.HttpClient.UpStreamCert = _broker.Certificate;
-                CertificateUsed?.Invoke(this,
-                    $"Certificado aplicado: {_broker.Certificate.SubjectName.Name} [{_broker.Certificate.Thumbprint[..8]}...]");
-            }
-            catch (Exception ex)
-            {
-                Log?.Invoke(this, $"Erro ao injetar certificado: {ex.Message}");
-            }
         }
 
         RequestAllowed?.Invoke(this, host);
@@ -128,6 +126,7 @@ h1 {{ color:#e94560; }}
             _proxyServer.Stop();
             _proxyServer.BeforeRequest -= OnBeforeRequest;
             _proxyServer.ServerCertificateValidationCallback -= OnCertificateValidation;
+            _proxyServer.ClientCertificateSelectionCallback -= OnCertificateSelection;
             _isRunning = false;
             Log?.Invoke(this, "Proxy parado");
         }
