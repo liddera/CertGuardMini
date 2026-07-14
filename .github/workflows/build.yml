@@ -1,7 +1,7 @@
-name: CertGuard Mini Build
+name: CertGuard Desktop Build
 
 on:
-  workflow_dispatch:  # Só roda quando VOCÊ clica "Run workflow"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,21 +23,18 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      run: dotnet restore
-      working-directory: .
+      run: dotnet restore CertGuard.sln
 
     - name: Build
-      run: dotnet build -c ${{ matrix.configuration }} --no-restore
-      working-directory: .
+      run: dotnet build CertGuard.sln -c ${{ matrix.configuration }} --no-restore
 
     - name: Publish self-contained
       run: |
-        dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
-      working-directory: .
+        dotnet publish src/CertGuard.Desktop/CertGuard.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: CertGuardMini-win-x64
-        path: ./publish/CertGuardMini.exe
+        name: CertGuardDesktop-win-x64
+        path: ./publish/CertGuardDesktop.exe
         retention-days: 30

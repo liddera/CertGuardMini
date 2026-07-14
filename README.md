@@ -227,6 +227,20 @@ CertGuardMini/
 
 ---
 
+## Documentação Completa
+
+| Documento | Descrição |
+|-----------|-----------|
+| [MIGRATION-PLAN.md](docs/MIGRATION-PLAN.md) | Plano de migração do Electron para .NET |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitetura do sistema e diagramas |
+| [API-ENDPOINTS.md](docs/API-ENDPOINTS.md) | Mapa completo dos endpoints da API |
+| [DOMAIN-BLOCKING.md](docs/DOMAIN-BLOCKING.md) | Bloqueio de domínios e controle de assinadores |
+| [AUDIT-SYSTEM.md](docs/AUDIT-SYSTEM.md) | Sistema de auditoria e monitoramento |
+| [COMPARISON.md](docs/COMPARISON.md) | Comparação Electron vs .NET WPF |
+| [IMPLEMENTATION-GUIDE.md](docs/IMPLEMENTATION-GUIDE.md) | Guia passo a passo de implementação |
+
+---
+
 ## Próximos Passos
 
 - [ ] Integrar com Laravel API (buscar regras de domínio do servidor)
@@ -235,6 +249,11 @@ CertGuardMini/
 - [ ] Instalação automática de CA raiz para HTTPS
 - [ ] System Tray (minimizar para a bandeja do sistema)
 - [ ] Build automático com GitHub Actions
+- [ ] Migrar certguard-desktop (Electron) para .NET WPF
+- [ ] Implementar MITM Proxy com Titanium.Web.Proxy
+- [ ] Implementar ACL na chave privada
+- [ ] Implementar monitoramento ETW
+- [ ] Implementar escrita no Windows Event Log
 
 ---
 

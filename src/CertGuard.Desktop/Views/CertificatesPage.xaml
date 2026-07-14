@@ -1,0 +1,183 @@
+<UserControl x:Class="CertGuard.Desktop.Views.CertificatesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CertGuard.Desktop.ViewModels"
+             Background="#1a1a2e">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header: Title + Refresh + Countdown -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Border Background="#3b82f6" CornerRadius="8" Padding="8"
+                    Margin="0,0,10,0" VerticalAlignment="Center">
+                <TextBlock Text="CertGuard" FontSize="16" Foreground="White" FontWeight="Bold"/>
+            </Border>
+            <TextBlock Text="Certificados Digitais" FontSize="18" Foreground="White"
+                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+            <Button Content="Atualizar" Command="{Binding LoadCertificatesCommand}"
+                    Padding="10,5" Margin="0,0,10,0"/>
+            <Border Background="#eff6ff" CornerRadius="6" Padding="8"
+                    BorderBrush="#bfdbfe" BorderThickness="1"
+                    Visibility="{Binding HasActiveSession, Converter={StaticResource BoolToVisibility}}"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="⏱ " FontSize="12"/>
+                    <TextBlock Text="{Binding CountdownText}" FontWeight="Bold"
+                               Foreground="#1d4ed8" FontSize="12"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Active Session Banner -->
+        <Border Grid.Row="1" Background="#d1fae5" BorderBrush="#a7f3d0"
+                BorderThickness="1" CornerRadius="8" Padding="12"
+                Margin="0,0,0,10"
+                Visibility="{Binding HasActiveSession, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="#a7f3d0" CornerRadius="6"
+                        Width="36" Height="36" Margin="0,0,10,0">
+                    <TextBlock Text="✓" FontSize="16" Foreground="#059669"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="Certificado Ativo" FontWeight="Bold"
+                               Foreground="#065f46" FontSize="13"/>
+                    <TextBlock Text="{Binding ActiveSessionInfo}" Foreground="#047857"
+                               FontSize="11"/>
+                </StackPanel>
+
+                <Button Grid.Column="2" Content="✕ Desativar"
+                        Command="{Binding DeactivateCommand}"
+                        Background="White" Foreground="#059669"
+                        BorderBrush="#a7f3d0" Padding="10,5"
+                        FontWeight="Bold" FontSize="11"/>
+            </Grid>
+        </Border>
+
+        <!-- Search + Filters -->
+        <Grid Grid.Row="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                     Background="#2d2d44" Foreground="White" BorderBrush="#4a4a6a"
+                     Padding="8,5" Margin="0,0,10,0" FontSize="12"/>
+
+            <CheckBox Grid.Column="1" Content="Só ativos"
+                      IsChecked="{Binding OnlyActive}"
+                      Foreground="White" Margin="0,0,15,0"
+                      VerticalAlignment="Center"/>
+
+            <CheckBox Grid.Column="2" Content="Exibir CNPJ"
+                      IsChecked="{Binding ShowCnpj}"
+                      Foreground="White" Margin="0,0,15,0"
+                      VerticalAlignment="Center"/>
+
+            <TextBlock Grid.Column="3"
+                       Foreground="#a0a0a0" FontSize="11"
+                       VerticalAlignment="Center">
+                <TextBlock.Text>
+                    <Binding Path="FilteredCertificados.Count" StringFormat="{}{0} certificados"/>
+                </TextBlock.Text>
+            </TextBlock>
+        </Grid>
+
+        <!-- Error -->
+        <TextBlock Grid.Row="3" Text="{Binding ErrorMessage}"
+                   Foreground="#ff6b6b" Margin="0,0,0,5"
+                   TextWrapping="Wrap"
+                   Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibility}}"/>
+
+        <!-- Certificate List -->
+        <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding FilteredCertificados}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#2d2d44" CornerRadius="8" Padding="12"
+                                Margin="0,0,0,8" BorderBrush="#3a3a5a" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Status Icon -->
+                                <Border Grid.Column="0" CornerRadius="8"
+                                        Width="40" Height="40" Margin="0,0,12,0">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{Binding Status, Converter={StaticResource StatusToBgColor}}"/>
+                                    </Border.Background>
+                                    <TextBlock Text="📄" FontSize="18"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+
+                                <!-- Info -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Apelido}" FontWeight="Bold"
+                                               Foreground="White" FontSize="13"/>
+                                    <TextBlock Foreground="#a0a0a0" FontSize="11">
+                                        <Run Text="Empresa: "/>
+                                        <Run Text="{Binding Empresa, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <Border CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <SolidColorBrush Color="{Binding Status, Converter={StaticResource StatusToColor}}"/>
+                                            </Border.Background>
+                                            <Border.Background>
+                                                <SolidColorBrush Color="{Binding Status, Converter={StaticResource StatusToBgColor}}"/>
+                                            </Border.Background>
+                                            <TextBlock Text="{Binding Status}" FontWeight="Bold"
+                                                       FontSize="10" TextTransform="Uppercase">
+                                                <TextBlock.Foreground>
+                                                    <SolidColorBrush Color="{Binding Status, Converter={StaticResource StatusToColor}}"/>
+                                                </TextBlock.Foreground>
+                                            </TextBlock>
+                                        </Border>
+                                        <TextBlock Foreground="#a0a0a0" FontSize="10"
+                                                   VerticalAlignment="Center">
+                                            <Run Text="Vencimento: "/>
+                                            <Run Text="{Binding DataVencimento, StringFormat=dd/MM/yyyy, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Action Button -->
+                                <Button Grid.Column="2" Content="Ativar"
+                                        Tag="{Binding}"
+                                        Click="Activate_Click"
+                                        Background="#3b82f6" Foreground="White"
+                                        Padding="12,6" FontWeight="Bold" FontSize="11"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
