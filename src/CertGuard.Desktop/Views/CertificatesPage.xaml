@@ -6,6 +6,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <InverseBoolConverter x:Key="InvertBoolConverter"/>
     </UserControl.Resources>
 
     <Grid Margin="10">
@@ -18,32 +19,70 @@
         </Grid.RowDefinitions>
 
         <!-- Header: Title + Refresh + Countdown -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <Border Background="#3b82f6" CornerRadius="8" Padding="8"
-                    Margin="0,0,10,0" VerticalAlignment="Center">
-                <TextBlock Text="CertGuard" FontSize="16" Foreground="White" FontWeight="Bold"/>
-            </Border>
-            <TextBlock Text="Certificados Digitais" FontSize="18" Foreground="White"
-                       VerticalAlignment="Center" Margin="0,0,20,0"/>
-            <Button Content="Atualizar" Command="{Binding LoadCertificatesCommand}"
-                    Padding="10,5" Margin="0,0,10,0"/>
-            <Border Background="#eff6ff" CornerRadius="6" Padding="8"
-                    BorderBrush="#bfdbfe" BorderThickness="1"
-                    Visibility="{Binding HasActiveSession, Converter={StaticResource BoolToVisibility}}"
-                    VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="⏱ " FontSize="12"/>
-                    <TextBlock Text="{Binding CountdownText}" FontWeight="Bold"
-                               Foreground="#1d4ed8" FontSize="12"/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Border Background="#3b82f6" CornerRadius="8" Padding="8"
+                        Margin="0,0,10,0" VerticalAlignment="Center">
+                    <TextBlock Text="🛡" FontSize="16" Foreground="White"/>
+                </Border>
+                <TextBlock Text="Certificados Digitais" FontSize="18" Foreground="White"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button Content="⟳ Atualizar" Command="{Binding LoadCertificatesCommand}"
+                        Padding="10,6" Margin="0,0,10,0"
+                        Background="#374151" Foreground="White"/>
+
+                <!-- Countdown Badge -->
+                <Border CornerRadius="6" Padding="10,6"
+                        Visibility="{Binding HasActiveSession, Converter={StaticResource BoolToVisibility}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#eff6ff"/>
+                            <Setter Property="BorderBrush" Value="#bfdbfe"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowExpiryWarning}" Value="True">
+                                    <Setter Property="Background" Value="#fef3c7"/>
+                                    <Setter Property="BorderBrush" Value="#fcd34d"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Border.BorderThickness>
+                        <Thickness>1</Thickness>
+                    </Border.BorderThickness>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⏱ " FontSize="12"/>
+                        <TextBlock Text="{Binding CountdownText}" FontWeight="Bold"
+                                   FontSize="12">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#1d4ed8"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ShowExpiryWarning}" Value="True">
+                                            <Setter Property="Foreground" Value="#b45309"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
 
         <!-- Active Session Banner -->
-        <Border Grid.Row="1" Background="#d1fae5" BorderBrush="#a7f3d0"
-                BorderThickness="1" CornerRadius="8" Padding="12"
+        <Border Grid.Row="1" CornerRadius="8" Padding="12"
                 Margin="0,0,0,10"
-                Visibility="{Binding HasActiveSession, Converter={StaticResource BoolToVisibility}}">
+                Visibility="{Binding HasActiveSession, Converter={StaticResource BoolToVisibility}}"
+                Background="#d1fae5" BorderBrush="#a7f3d0" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -67,7 +106,7 @@
                 <Button Grid.Column="2" Content="✕ Desativar"
                         Command="{Binding DeactivateCommand}"
                         Background="White" Foreground="#059669"
-                        BorderBrush="#a7f3d0" Padding="10,5"
+                        BorderBrush="#a7f3d0" Padding="12,6"
                         FontWeight="Bold" FontSize="11"/>
             </Grid>
         </Border>
@@ -144,10 +183,8 @@
                                         <Run Text="{Binding Empresa, Mode=OneWay}"/>
                                     </TextBlock>
                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <!-- Status Badge -->
                                         <Border CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <SolidColorBrush Color="{Binding Status, Converter={StaticResource StatusToColor}}"/>
-                                            </Border.Background>
                                             <Border.Background>
                                                 <SolidColorBrush Color="{Binding Status, Converter={StaticResource StatusToBgColor}}"/>
                                             </Border.Background>

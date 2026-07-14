@@ -1,39 +1,97 @@
 <Window x:Class="CertGuard.Desktop.Views.ExpiryDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Sessão Expirando" Height="200" Width="350"
+        Title="CertGuard – Sessão expirando" Height="350" Width="450"
         WindowStartupLocation="CenterOwner"
-        Background="#2d2d44"
+        Background="White"
         ResizeMode="NoResize"
-        Topmost="True">
+        Topmost="True"
+        WindowStyle="ToolWindow">
 
-    <Grid Margin="20">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Sessão expirando em breve"
-                   FontSize="16" Foreground="White"
-                   HorizontalAlignment="Center" Margin="0,0,0,10"/>
+        <!-- Title Bar -->
+        <Border Grid.Row="0" Background="#f1f5f9" Padding="12,8"
+                BorderBrush="#e2e8f0" BorderThickness="0,0,0,1">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <Border Background="#3b82f6" CornerRadius="4" Padding="4"
+                            Margin="0,0,8,0">
+                        <TextBlock Text="🛡" FontSize="12" Foreground="White"/>
+                    </Border>
+                    <TextBlock Text="CertGuard – A sessão está sendo finalizada"
+                               FontSize="11" FontWeight="Bold" Foreground="#1e293b"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Content="✕" HorizontalAlignment="Right"
+                        Click="Close_Click" Background="Transparent"
+                        BorderThickness="0" Padding="4" FontSize="12"
+                        Foreground="#64748b"/>
+            </Grid>
+        </Border>
 
-        <TextBlock Grid.Row="1" Text="{Binding Remaining, StringFormat=\\{0\\:mm\\:ss\\}}"
-                   FontSize="32" Foreground="#ff6b6b"
-                   HorizontalAlignment="Center" FontWeight="Bold"/>
+        <!-- Content -->
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Margin="20">
+            <!-- Logo -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                        Margin="0,0,0,20">
+                <Border Background="LinearGradientBrush(StartPoint='0,0' EndPoint='1,1')"
+                        CornerRadius="8" Width="40" Height="40"
+                        Margin="0,0,10,0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#3b82f6" Offset="0"/>
+                            <GradientStop Color="#06b6d4" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <TextBlock Text="🛡" FontSize="20" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock FontSize="20" FontWeight="ExtraBold">
+                        <Run Text="Cert" Foreground="#1e293b"/>
+                        <Run Text="Guard" Foreground="#3b82f6"/>
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
 
-        <TextBlock Grid.Row="2" Text="Deseja estender a sessão?"
-                   Foreground="White" HorizontalAlignment="Center"
-                   Margin="0,10,0,20"/>
+            <!-- Message -->
+            <TextBlock Text="Sua sessão será encerrada em:"
+                       FontSize="16" FontWeight="Bold" Foreground="#1e40af"
+                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Content="Estender" Click="Extend_Click"
-                    Background="#4ecdc4" Foreground="White"
-                    Padding="15,5" Margin="0,0,10,0"/>
-            <Button Content="Encerrar" Click="Close_Click"
-                    Background="#ff6b6b" Foreground="White"
-                    Padding="15,5"/>
+            <!-- Countdown -->
+            <TextBlock x:Name="CountdownText" FontSize="40" FontWeight="Black"
+                       Foreground="#1e293b" HorizontalAlignment="Center"
+                       Margin="0,0,0,5"/>
+
+            <TextBlock x:Name="SecondsText" FontSize="10" Foreground="#94a3b8"
+                       HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+            <!-- Renew Button -->
+            <Button x:Name="RenewButton" Content="✓ Renovar sessão"
+                    Click="Renew_Click"
+                    HorizontalAlignment="Center"
+                    Padding="20,10" FontSize="12" FontWeight="ExtraBold"
+                    BorderBrush="#94a3b8" BorderThickness="2"
+                    Background="#f8fafc" Foreground="#1e293b">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#f8fafc"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#f1f5f9"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>
